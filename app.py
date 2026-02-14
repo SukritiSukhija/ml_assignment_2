@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import joblib
 import os
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -13,11 +15,13 @@ from sklearn.metrics import (
 
 st.set_page_config(page_title="Adult Income Classification", layout="wide")
 
-st.title("💼 Adult Income Classification App")
+st.title("💼 Adult Income Prediction Dashboard")
+st.markdown("Predict whether an individual earns more than $50K per year.")
 
-# --------------------------------------------------
-# Model Selection
-# --------------------------------------------------
+# -----------------------------
+# Sidebar - Model Selection
+# -----------------------------
+st.sidebar.header("Model Selection")
 
 model_options = [
     "Logistic Regression",
@@ -28,40 +32,45 @@ model_options = [
     "XGBoost"
 ]
 
-selected_model = st.selectbox("Select Model", model_options)
+selected_model = st.sidebar.selectbox("Choose Model", model_options)
 
 model_filename = selected_model.replace(" ", "_") + ".pkl"
 model_path = os.path.join("saved_models", model_filename)
 
 model = joblib.load(model_path)
 
-# --------------------------------------------------
-# Load Original Metrics
-# --------------------------------------------------
-
+# -----------------------------
+# Display Original Metrics
+# -----------------------------
 st.subheader("📊 Original Model Performance")
 
 metrics_path = os.path.join("saved_models", "model_metrics.csv")
 
 if os.path.exists(metrics_path):
     metrics_df = pd.read_csv(metrics_path, index_col=0)
-    st.dataframe(metrics_df.loc[[selected_model]])
+    row = metrics_df.loc[selected_model]
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Accuracy", round(row["Accuracy"], 3))
+    col2.metric("F1 Score", round(row["F1"], 3))
+    col3.metric("MCC", round(row["MCC"], 3))
+
 else:
     st.warning("Model metrics file not found.")
 
-# --------------------------------------------------
-# Upload Data
-# --------------------------------------------------
+st.divider()
 
-st.subheader("📁 Upload Processed Test CSV")
+# -----------------------------
+# Upload Data Section
+# -----------------------------
+st.subheader("📁 Upload Processed Test Dataset")
 
-uploaded_file = st.file_uploader("Upload Processed CSV File", type=["csv"])
+uploaded_file = st.file_uploader("Upload CSV file (Processed Data)", type=["csv"])
 
 if uploaded_file is not None:
 
     data = pd.read_csv(uploaded_file)
 
-    # Separate true labels if present
     if "income" in data.columns:
         y_true = data["income"]
         X_input = data.drop("income", axis=1)
@@ -69,23 +78,33 @@ if uploaded_file is not None:
         y_true = None
         X_input = data
 
-    # Make Predictions
     predictions = model.predict(X_input)
 
-    # Combine data + predictions
-    output_df = X_input.copy()
-    output_df["Prediction"] = predictions
+    if hasattr(model, "predict_proba"):
+        probabilities = model.predict_proba(X_input)[:, 1]
+    else:
+        probabilities = None
+
+    # -----------------------------
+    # Show Prediction Table
+    # -----------------------------
+    st.subheader("🔮 Predictions")
+
+    result_df = pd.DataFrame({
+        "Prediction": predictions
+    })
+
+    if probabilities is not None:
+        result_df["Probability (>50K)"] = probabilities
 
     if y_true is not None:
-        output_df["Actual"] = y_true.values
+        result_df["Actual"] = y_true.values
 
-    st.subheader("📊 Data with Predictions")
-    st.dataframe(output_df)
+    st.dataframe(result_df, use_container_width=True)
 
-    # --------------------------------------------------
-    # Evaluation on Uploaded Data (if labels exist)
-    # --------------------------------------------------
-
+    # -----------------------------
+    # Evaluation Metrics
+    # -----------------------------
     if y_true is not None:
 
         st.subheader("📈 Evaluation on Uploaded Data")
@@ -96,16 +115,29 @@ if uploaded_file is not None:
         f1 = f1_score(y_true, predictions)
         mcc = matthews_corrcoef(y_true, predictions)
 
-        metrics_dict = {
-            "Accuracy": acc,
-            "Precision": prec,
-            "Recall": rec,
-            "F1 Score": f1,
-            "MCC": mcc
-        }
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Accuracy", round(acc, 3))
+        col2.metric("F1 Score", round(f1, 3))
+        col3.metric("MCC", round(mcc, 3))
 
-        st.write(metrics_dict)
-
+        # -----------------------------
+        # Confusion Matrix Heatmap
+        # -----------------------------
         st.subheader("📌 Confusion Matrix")
+
         cm = confusion_matrix(y_true, predictions)
-        st.write(cm)
+
+        fig, ax = plt.subplots()
+        sns.heatmap(
+            cm,
+            annot=True,
+            fmt="d",
+            cmap="Blues",
+            xticklabels=["<=50K", ">50K"],
+            yticklabels=["<=50K", ">50K"],
+            ax=ax
+        )
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+
+        st.pyplot(fig)
