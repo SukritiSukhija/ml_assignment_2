@@ -15,9 +15,10 @@ st.set_page_config(page_title="Adult Income Classification", layout="wide")
 
 st.title("💼 Adult Income Classification App")
 
-# -----------------------------
+# --------------------------------------------------
 # Model Selection
-# -----------------------------
+# --------------------------------------------------
+
 model_options = [
     "Logistic Regression",
     "Decision Tree",
@@ -29,41 +30,38 @@ model_options = [
 
 selected_model = st.selectbox("Select Model", model_options)
 
-# -----------------------------
-# Load Model
-# -----------------------------
 model_filename = selected_model.replace(" ", "_") + ".pkl"
 model_path = os.path.join("saved_models", model_filename)
 
 model = joblib.load(model_path)
 
-# -----------------------------
-# Load Saved Metrics
-# -----------------------------
+# --------------------------------------------------
+# Load Original Metrics
+# --------------------------------------------------
+
 st.subheader("📊 Original Model Performance")
 
 metrics_path = os.path.join("saved_models", "model_metrics.csv")
 
 if os.path.exists(metrics_path):
     metrics_df = pd.read_csv(metrics_path, index_col=0)
-    st.dataframe(metrics_df.loc[selected_model])
+    st.dataframe(metrics_df.loc[[selected_model]])
 else:
     st.warning("Model metrics file not found.")
 
-# -----------------------------
+# --------------------------------------------------
 # Upload Data
-# -----------------------------
+# --------------------------------------------------
+
 st.subheader("📁 Upload Processed Test CSV")
 
 uploaded_file = st.file_uploader("Upload Processed CSV File", type=["csv"])
 
 if uploaded_file is not None:
+
     data = pd.read_csv(uploaded_file)
 
-    st.write("### Uploaded Data Preview")
-    st.dataframe(data.head())
-
-    # If income column exists → separate
+    # Separate true labels if present
     if "income" in data.columns:
         y_true = data["income"]
         X_input = data.drop("income", axis=1)
@@ -71,14 +69,25 @@ if uploaded_file is not None:
         y_true = None
         X_input = data
 
-    # Predictions
+    # Make Predictions
     predictions = model.predict(X_input)
 
-    st.write("### 🔮 Predictions")
-    st.write(predictions)
+    # Combine data + predictions
+    output_df = X_input.copy()
+    output_df["Prediction"] = predictions
 
-    # If true labels exist → calculate metrics
     if y_true is not None:
+        output_df["Actual"] = y_true.values
+
+    st.subheader("📊 Data with Predictions")
+    st.dataframe(output_df)
+
+    # --------------------------------------------------
+    # Evaluation on Uploaded Data (if labels exist)
+    # --------------------------------------------------
+
+    if y_true is not None:
+
         st.subheader("📈 Evaluation on Uploaded Data")
 
         acc = accuracy_score(y_true, predictions)
