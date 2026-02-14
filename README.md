@@ -104,11 +104,13 @@ ml_assignment_2/
 │-- requirements.txt
 │-- saved_models/
 │-- notebooks/
+│-- data/
+
 
 ## 8. How to Run the Project Locally
 
 1. Clone the repository:
-   git clone <your-repo-link>
+   git clone https://github.com/SukritiSukhija/ml_assignment_2.git
 
 2. Navigate to project folder:
    cd ml_assignment_2
@@ -124,4 +126,4 @@ ml_assignment_2/
 ## 9. Live Streamlit App
 
 Deployed App Link:
-https://your-app-link.streamlit.app
+https://mlassignment2-gre6jxyroevqdam4qubx6a.streamlit.app/
