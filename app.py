@@ -95,7 +95,7 @@ if uploaded_file is not None:
     })
 
     if probabilities is not None:
-        result_df["Probability (>50K)"] = probabilities
+        result_df["Probability (>50K)"] =  probabilities.round(4)
 
     if y_true is not None:
         result_df["Actual"] = y_true.values
