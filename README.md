@@ -72,17 +72,27 @@ Evaluation Metrics Used:
 
 ---
 
-## 5. Observations
+## 5. Model-wise Observations
 
-- XGBoost achieved the best overall performance across most metrics.
-- Random Forest also performed strongly and provided balanced precision and recall.
-- Logistic Regression performed well but had lower capability to capture complex patterns.
-- Decision Tree improved after tuning but is prone to overfitting.
-- KNN showed moderate performance.
-- Naive Bayes achieved very high recall but very low precision, indicating many false positives.
+### Logistic Regression
+Performed well as a baseline linear classifier with strong AUC. However, due to its linear decision boundary, it was limited in capturing complex non-linear feature interactions.
 
-Overall, ensemble methods (Random Forest and XGBoost) outperformed individual models due to their ability to capture non-linear relationships.
+### Decision Tree
+After tuning, performance improved significantly. It captures non-linear relationships effectively but is prone to overfitting compared to ensemble methods.
 
+### K-Nearest Neighbors (KNN)
+Showed moderate performance. Its effectiveness is influenced by feature scaling and high dimensionality caused by one-hot encoding.
+
+### Naive Bayes
+Achieved very high recall but extremely low precision, indicating a large number of false positives. The independence assumption of features does not hold well for this dataset.
+
+### Random Forest
+Delivered strong and stable performance with balanced precision and recall. Ensemble averaging helped reduce overfitting seen in a single decision tree.
+
+### XGBoost
+Achieved the best overall performance across most metrics including AUC, F1-score, and MCC. Its boosting mechanism effectively captured complex feature interactions.
+
+Overall, ensemble models (Random Forest and XGBoost) outperformed individual classifiers due to their ability to model non-linear relationships and reduce variance.
 ---
 
 ## 6. Streamlit Application
